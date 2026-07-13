@@ -1,0 +1,31 @@
+[mysqld]
+# Writer 전용 튜닝 — 쓰기 최적화
+server_id          = 1
+log_bin            = mariadb-bin
+binlog_format      = ROW
+expire_logs_days   = 7
+
+# InnoDB 튜닝
+innodb_buffer_pool_size   = 512M
+innodb_log_file_size      = 128M
+innodb_flush_log_at_trx_commit = 1   # 내구성 최우선
+innodb_flush_method        = O_DIRECT
+innodb_file_per_table      = ON
+
+# 연결 설정
+max_connections    = 300
+wait_timeout       = 600
+interactive_timeout = 600
+
+# SSL 강제 (SPI 연결 구간 암호화)
+require_secure_transport = ON
+
+# 슬로우 쿼리 로그
+slow_query_log         = 1
+slow_query_log_file    = /var/log/mysql/slow.log
+long_query_time        = 1
+log_queries_not_using_indexes = 1
+
+# 문자셋
+character_set_server = utf8mb4
+collation_server     = utf8mb4_unicode_ci
