@@ -1,0 +1,250 @@
+{
+  "__inputs": [{ "name": "DS_PROMETHEUS", "type": "datasource", "pluginId": "prometheus" }],
+  "__requires": [{ "type": "grafana", "id": "grafana", "name": "Grafana", "version": "11.0.0" }],
+  "title": "Keycloak HA — 인증 서버 모니터링",
+  "uid": "infrasec-kc-ha",
+  "description": "Keycloak HA 클러스터 인증 요청, 세션, Infinispan 캐시 상태",
+  "tags": ["keycloak", "infrasec", "sso"],
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "15s",
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "panels": [
+    {
+      "id": 1,
+      "title": "인증 요청 처리율 (RPS)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "table", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "sum by (realm) (rate(keycloak_request_duration_seconds_count{uri=~\".*/token\"}[1m]))",
+          "legendFormat": "토큰 발급 ({{realm}})",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(keycloak_request_duration_seconds_count{uri=~\".*/token/introspect\"}[1m]))",
+          "legendFormat": "토큰 검증",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "응답시간 P95 / P99 (ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "steps": [
+              { "value": null,  "color": "green" },
+              { "value": 200,   "color": "yellow" },
+              { "value": 500,   "color": "red" }
+            ]
+          },
+          "custom": { "lineWidth": 2 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(keycloak_request_duration_seconds_bucket{uri=~\".*/token\"}[5m]))) * 1000",
+          "legendFormat": "P95",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(keycloak_request_duration_seconds_bucket{uri=~\".*/token\"}[5m]))) * 1000",
+          "legendFormat": "P99",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "활성 세션 수",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "value": null, "color": "blue" },
+              { "value": 400,  "color": "yellow" },
+              { "value": 800,  "color": "red" }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "graphMode": "area" },
+      "targets": [
+        {
+          "expr": "sum(keycloak_user_sessions_total)",
+          "legendFormat": "전체 세션",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "로그인 에러율 (%)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "value": null, "color": "green" },
+              { "value": 1,    "color": "yellow" },
+              { "value": 5,    "color": "red" }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(keycloak_event_total{type='LOGIN_ERROR'}[5m])) / sum(rate(keycloak_event_total{type=~'LOGIN|LOGIN_ERROR'}[5m])) * 100",
+          "legendFormat": "에러율",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Infinispan 캐시 히트율 — sessions",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0, "max": 1,
+          "thresholds": {
+            "steps": [
+              { "value": null, "color": "red" },
+              { "value": 0.7,  "color": "yellow" },
+              { "value": 0.9,  "color": "green" }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(vendor_cache_manager_default_cache_sessions_statistics_hits_total[5m])) / (sum(rate(vendor_cache_manager_default_cache_sessions_statistics_hits_total[5m])) + sum(rate(vendor_cache_manager_default_cache_sessions_statistics_misses_total[5m])))",
+          "legendFormat": "히트율",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Infinispan 클러스터 멤버 수",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "value": null, "color": "red" },
+              { "value": 2,    "color": "green" }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "⚠ 1노드 (단일 장애점)", "color": "red" }, "2": { "text": "✓ 2노드 (HA 정상)", "color": "green" } } }
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "vendor_cache_manager_default_cluster_members",
+          "legendFormat": "클러스터 멤버",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Realm별 이벤트 분포",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "options": { "pieType": "donut", "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [
+        {
+          "expr": "sum by (realm, type) (increase(keycloak_event_total[1h]))",
+          "legendFormat": "{{realm}} / {{type}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "DB 커넥션 풀 사용률 (Keycloak → mariadb-kc)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2, "fillOpacity": 15 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active",
+          "legendFormat": "활성 연결",
+          "refId": "A"
+        },
+        {
+          "expr": "hikaricp_connections_idle",
+          "legendFormat": "유휴 연결",
+          "refId": "B"
+        },
+        {
+          "expr": "hikaricp_connections_max",
+          "legendFormat": "최대 연결",
+          "refId": "C"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "pluginId": "prometheus",
+        "current": {}
+      },
+      {
+        "name": "realm",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": "label_values(keycloak_event_total, realm)",
+        "current": {},
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*"
+      }
+    ]
+  }
+}
