@@ -1,0 +1,191 @@
+datadir=/var/lib/proxysql
+
+#################
+# 어드민 인터페이스
+#################
+admin_variables=
+{
+    admin_credentials="${PROXYSQL_ADMIN_USER}:${PROXYSQL_ADMIN_PASS};stats:stats"
+    mysql_ifaces="0.0.0.0:6032"
+    refresh_interval=2000
+}
+
+######################
+# MySQL 글로벌 변수
+######################
+mysql_variables=
+{
+    # 클라이언트 ↔ ProxySQL 연결 설정
+    interfaces="0.0.0.0:6033"
+    default_schema="appdb"
+    
+    # 서버 타임아웃 (ms)
+    connect_timeout_server=3000
+    connect_timeout_server_max=10000
+    connection_max_age_ms=0
+    
+    # Audit 로그 설정 — JSON 포맷, SELECT 제외 필터는 query_rules로 처리
+    eventslog_filename="/var/log/proxysql/audit.log"
+    eventslog_filesize=104857600    # 100MB 롤링
+    eventslog_default_log=0         # 기본은 기록 안 함
+    
+    # 모니터 계정
+    monitor_username="${PROXYSQL_MONITOR_USER}"
+    monitor_password="${PROXYSQL_MONITOR_PASS}"
+    monitor_connect_interval=60000
+    monitor_ping_interval=10000
+    monitor_read_only_interval=1500
+    monitor_read_only_timeout=500
+    
+    # 쿼리 통계
+    stats_time_backend_query=true
+    stats_time_query_processor=true
+}
+
+##########################
+# 백엔드 DB 서버 정의
+##########################
+mysql_servers=
+(
+    {
+        address="mariadb-writer"
+        port=3306
+        hostgroup=10                # hostgroup 10 = Writer
+        status="ONLINE"
+        weight=1000
+        compression=0
+        max_connections=200
+        max_replication_lag=0
+    },
+    {
+        address="mariadb-reader"
+        port=3306
+        hostgroup=20                # hostgroup 20 = Reader
+        status="ONLINE"
+        weight=1000
+        compression=0
+        max_connections=200
+        max_replication_lag=10
+    }
+)
+
+##########################
+# DB 사용자 매핑
+##########################
+mysql_users=
+(
+    {
+        username="${MARIADB_USER}"
+        password="${MARIADB_PASSWORD}"
+        default_hostgroup=10        # 기본 → Writer
+        active=1
+        max_connections=200
+        default_schema="appdb"
+    }
+)
+
+##################################
+# 쿼리 라우팅 + 감사 필터 규칙
+# 우선순위: 낮은 rule_id 먼저 적용
+##################################
+mysql_query_rules=
+(
+    # ── 규칙 1: SELECT → Reader 라우팅 (감사 제외) ──
+    {
+        rule_id=1
+        active=1
+        match_pattern="^SELECT"
+        destination_hostgroup=20    # Reader
+        apply=1
+        log=0                       # SELECT는 감사 기록 안 함
+    },
+
+    # ── 규칙 2: BEGIN / COMMIT / ROLLBACK → Writer ──
+    {
+        rule_id=2
+        active=1
+        match_pattern="^(BEGIN|COMMIT|ROLLBACK)"
+        destination_hostgroup=10
+        apply=1
+        log=0
+    },
+
+    # ── 규칙 3: INSERT → Writer + 감사 기록 ──
+    {
+        rule_id=10
+        active=1
+        match_pattern="^INSERT"
+        destination_hostgroup=10
+        apply=1
+        log=1                       # 감사 로그 기록
+    },
+
+    # ── 규칙 4: UPDATE → Writer + 감사 기록 ──
+    {
+        rule_id=11
+        active=1
+        match_pattern="^UPDATE"
+        destination_hostgroup=10
+        apply=1
+        log=1
+    },
+
+    # ── 규칙 5: DELETE → Writer + 감사 기록 ──
+    {
+        rule_id=12
+        active=1
+        match_pattern="^DELETE"
+        destination_hostgroup=10
+        apply=1
+        log=1
+    },
+
+    # ── 규칙 6: DDL (CREATE/ALTER/DROP/TRUNCATE) → Writer + 감사 기록 ──
+    {
+        rule_id=20
+        active=1
+        match_pattern="^(CREATE|ALTER|DROP|TRUNCATE|RENAME)"
+        destination_hostgroup=10
+        apply=1
+        log=1
+    },
+
+    # ── 규칙 7: GRANT/REVOKE 권한 변경 → Writer + 감사 기록 ──
+    {
+        rule_id=21
+        active=1
+        match_pattern="^(GRANT|REVOKE)"
+        destination_hostgroup=10
+        apply=1
+        log=1
+    },
+
+    # ── 규칙 99: 나머지 모두 → Writer (기본) ──
+    {
+        rule_id=99
+        active=1
+        match_pattern=".*"
+        destination_hostgroup=10
+        apply=1
+        log=0
+    }
+)
+
+##########################
+# 스케줄러 (선택)
+##########################
+scheduler=
+(
+    # 매 30초마다 쿼리 통계 집계
+    {
+        id=1
+        active=1
+        interval_ms=30000
+        filename="/usr/share/proxysql/tools/proxysql_galera_checker.sh"
+        arg1="10"
+        arg2="20"
+        arg3="0"
+        arg4="1"
+        arg5="/var/log/proxysql/galera_checker.log"
+    }
+)

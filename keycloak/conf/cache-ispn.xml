@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Keycloak Infinispan 클러스터 캐시 설정
+  Docker 환경에서 멀티캐스트 미지원 → JGroups TCP 스택 사용
+-->
+<infinispan
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="urn:infinispan:config:14.0 https://infinispan.org/schemas/infinispan-config-14.0.xsd"
+    xmlns="urn:infinispan:config:14.0">
+
+    <jgroups>
+        <!-- TCP 기반 클러스터 디스커버리 -->
+        <stack name="tcp" extends="tcp">
+            <TCP bind_port="7800" />
+            <!--
+              TCPPING: 정적 IP로 클러스터 멤버 지정
+              Docker 컨테이너명으로 DNS 해석
+            -->
+            <TCPPING
+                initial_hosts="keycloak-1[7800],keycloak-2[7800]"
+                port_range="1"
+                num_initial_members="1"
+            />
+        </stack>
+    </jgroups>
+
+    <cache-container name="keycloak" statistics="true">
+        <transport cluster="infrasec-kc-cluster" stack="tcp" lock-timeout="60000"/>
+
+        <!-- 인증 세션 캐시 (로컬) -->
+        <local-cache name="realms" statistics="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <memory max-count="10000"/>
+        </local-cache>
+
+        <!-- 유저 정보 캐시 (로컬) — Federation 조회 최적화 -->
+        <local-cache name="users" statistics="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <memory max-count="10000"/>
+            <expiration max-idle="3600000" lifespan="86400000"/>  <!-- 1시간 idle, 24시간 max -->
+        </local-cache>
+
+        <!-- 인증 코드 캐시 (분산) -->
+        <replicated-cache name="work" statistics="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <expiration lifespan="900000"/>  <!-- 15분 -->
+        </replicated-cache>
+
+        <!-- 세션 캐시 (분산 — HA 핵심) -->
+        <distributed-cache name="sessions" owners="2" statistics="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <expiration lifespan="1800000"/>  <!-- 30분 -->
+            <state-transfer await-state-transfer="true" timeout="60000"/>
+        </distributed-cache>
+
+        <!-- 오프라인 세션 캐시 (분산) -->
+        <distributed-cache name="offlineSessions" owners="2" statistics="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <expiration lifespan="5184000000"/>  <!-- 60일 -->
+        </distributed-cache>
+
+        <!-- 클라이언트 세션 캐시 (분산) -->
+        <distributed-cache name="clientSessions" owners="2" statistics="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+        </distributed-cache>
+
+        <!-- 토큰 취소 목록 (분산) -->
+        <distributed-cache name="actionTokens" owners="2" statistics="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <expiration max-idle="-1" lifespan="-1"/>
+        </distributed-cache>
+
+        <!-- 로그인 실패 카운터 캐시 (분산) -->
+        <distributed-cache name="loginFailures" owners="2" statistics="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+        </distributed-cache>
+
+    </cache-container>
+</infinispan>
