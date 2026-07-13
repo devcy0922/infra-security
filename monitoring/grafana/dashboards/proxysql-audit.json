@@ -1,0 +1,142 @@
+{
+  "__inputs": [
+    { "name": "DS_PROMETHEUS", "type": "datasource", "pluginId": "prometheus" },
+    { "name": "DS_LOKI",       "type": "datasource", "pluginId": "loki" }
+  ],
+  "title": "ProxySQL — DB 감사 + 쿼리 분석",
+  "uid": "infrasec-proxysql-audit",
+  "description": "CUD/DDL 감사 이벤트 타임라인, 쿼리 분포, Write/Read 라우팅 비율",
+  "tags": ["proxysql", "audit", "infrasec"],
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-3h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "감사 이벤트 타임라인 (CUD/DDL 로그)",
+      "type": "logs",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "showTime": true,
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "expr": "{job=\"proxysql-audit\", project=\"infra-security\"} | json | event != \"COM_QUERY_SELECT\"",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "쿼리 유형별 분포 (1시간)",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 10 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "options": { "pieType": "donut", "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [
+        {
+          "expr": "sum by (event) (count_over_time({job=\"proxysql-audit\"}[1h]))",
+          "legendFormat": "{{event}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "유저별 CUD 쿼리 수 (Top 10)",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 10 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "options": { "orientation": "horizontal" },
+      "targets": [
+        {
+          "expr": "topk(10, sum by (username) (count_over_time({job=\"proxysql-audit\"} | json [1h])))",
+          "legendFormat": "{{username}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "감사 이벤트 발생률 (events/min)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 10 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2, "fillOpacity": 20 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate({job=\"proxysql-audit\"} | json [1m])) * 60",
+          "legendFormat": "감사 이벤트/분",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "ProxySQL — Write/Read 라우팅 비율",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(proxysql_connection_pool_queries_total{hostgroup=\"10\"}[1m])",
+          "legendFormat": "Writer (HG 10)",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(proxysql_connection_pool_queries_total{hostgroup=\"20\"}[1m])",
+          "legendFormat": "Reader (HG 20)",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "ProxySQL — 커넥션 풀 상태",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "proxysql_connection_pool_conn_used",
+          "legendFormat": "사용 중 ({{hostgroup}})",
+          "refId": "A"
+        },
+        {
+          "expr": "proxysql_connection_pool_conn_free",
+          "legendFormat": "유휴 ({{hostgroup}})",
+          "refId": "B"
+        },
+        {
+          "expr": "proxysql_connection_pool_conn_err",
+          "legendFormat": "에러 ({{hostgroup}})",
+          "refId": "C"
+        }
+      ]
+    }
+  ]
+}
