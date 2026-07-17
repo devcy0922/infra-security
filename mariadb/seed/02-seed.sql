@@ -2,7 +2,7 @@
 -- infra-security — 시드 데이터
 -- 목적: 데모용 레거시 유저 + 상품/주문 데이터 생성
 --
--- 유저 패스워드: 모두 "Demo1234!" (bcrypt $2a$ 해시)
+-- 유저 패스워드 해시는 실행 시 DEMO_PASSWORD_HASH로 주입
 -- Lazy Migration 데모: 이 유저들은 KC DB에 없고 외부 DB에만 존재
 -- =============================================================
 
@@ -15,38 +15,38 @@ USE appdb;
 INSERT INTO users (username, email, password_hash, full_name, department, role, is_active) VALUES
 
 -- 관리자
-('admin.hong',    'admin.hong@corp-demo.local',    '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '홍길동',   '정보보안팀', 'admin',    1),
-('admin.kim',     'admin.kim@corp-demo.local',     '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '김관리',   '시스템팀',  'admin',    1),
+('admin.hong',    'admin.hong@corp-demo.local',    '__DEMO_PASSWORD_HASH__', '홍길동',   '정보보안팀', 'admin',    1),
+('admin.kim',     'admin.kim@corp-demo.local',     '__DEMO_PASSWORD_HASH__', '김관리',   '시스템팀',  'admin',    1),
 
 -- 매니저
-('mgr.lee',       'mgr.lee@corp-demo.local',       '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '이팀장',   '영업팀',    'manager',  1),
-('mgr.park',      'mgr.park@corp-demo.local',      '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '박부장',   '마케팅팀',  'manager',  1),
-('mgr.choi',      'mgr.choi@corp-demo.local',      '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '최팀장',   '개발팀',    'manager',  1),
+('mgr.lee',       'mgr.lee@corp-demo.local',       '__DEMO_PASSWORD_HASH__', '이팀장',   '영업팀',    'manager',  1),
+('mgr.park',      'mgr.park@corp-demo.local',      '__DEMO_PASSWORD_HASH__', '박부장',   '마케팅팀',  'manager',  1),
+('mgr.choi',      'mgr.choi@corp-demo.local',      '__DEMO_PASSWORD_HASH__', '최팀장',   '개발팀',    'manager',  1),
 
 -- 일반 직원
-('staff.user01',  'user01@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '이민준',   '영업팀',    'staff',    1),
-('staff.user02',  'user02@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '김서연',   '마케팅팀',  'staff',    1),
-('staff.user03',  'user03@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '박준혁',   '개발팀',    'staff',    1),
-('staff.user04',  'user04@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '최지은',   '인사팀',    'staff',    1),
-('staff.user05',  'user05@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '정승현',   '재무팀',    'staff',    1),
-('staff.user06',  'user06@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '한지훈',   '영업팀',    'staff',    1),
-('staff.user07',  'user07@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '오예린',   '개발팀',    'staff',    1),
-('staff.user08',  'user08@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '임도현',   '마케팅팀',  'staff',    1),
-('staff.user09',  'user09@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '신혜원',   '재무팀',    'staff',    1),
-('staff.user10',  'user10@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '강민석',   '인사팀',    'staff',    1),
-('staff.user11',  'user11@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '윤지수',   '영업팀',    'staff',    1),
-('staff.user12',  'user12@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '배현우',   '개발팀',    'staff',    1),
-('staff.user13',  'user13@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '조은비',   '마케팅팀',  'staff',    1),
-('staff.user14',  'user14@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '권태양',   '재무팀',    'staff',    1),
-('staff.user15',  'user15@corp-demo.local',        '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '류소희',   '인사팀',    'staff',    1),
+('staff.user01',  'user01@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '이민준',   '영업팀',    'staff',    1),
+('staff.user02',  'user02@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '김서연',   '마케팅팀',  'staff',    1),
+('staff.user03',  'user03@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '박준혁',   '개발팀',    'staff',    1),
+('staff.user04',  'user04@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '최지은',   '인사팀',    'staff',    1),
+('staff.user05',  'user05@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '정승현',   '재무팀',    'staff',    1),
+('staff.user06',  'user06@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '한지훈',   '영업팀',    'staff',    1),
+('staff.user07',  'user07@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '오예린',   '개발팀',    'staff',    1),
+('staff.user08',  'user08@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '임도현',   '마케팅팀',  'staff',    1),
+('staff.user09',  'user09@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '신혜원',   '재무팀',    'staff',    1),
+('staff.user10',  'user10@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '강민석',   '인사팀',    'staff',    1),
+('staff.user11',  'user11@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '윤지수',   '영업팀',    'staff',    1),
+('staff.user12',  'user12@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '배현우',   '개발팀',    'staff',    1),
+('staff.user13',  'user13@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '조은비',   '마케팅팀',  'staff',    1),
+('staff.user14',  'user14@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '권태양',   '재무팀',    'staff',    1),
+('staff.user15',  'user15@corp-demo.local',        '__DEMO_PASSWORD_HASH__', '류소희',   '인사팀',    'staff',    1),
 
 -- 읽기 전용
-('readonly.ext1', 'ext1@external-demo.local',      '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '외부감사1', '외부',     'readonly', 1),
-('readonly.ext2', 'ext2@external-demo.local',      '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '외부감사2', '외부',     'readonly', 1),
+('readonly.ext1', 'ext1@external-demo.local',      '__DEMO_PASSWORD_HASH__', '외부감사1', '외부',     'readonly', 1),
+('readonly.ext2', 'ext2@external-demo.local',      '__DEMO_PASSWORD_HASH__', '외부감사2', '외부',     'readonly', 1),
 
 -- 비활성 계정 (데모: 비활성 유저 Federation 제외 처리)
-('inactive.user1','inactive1@corp-demo.local',     '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '퇴사자1',  '구영업팀',  'staff',    0),
-('inactive.user2','inactive2@corp-demo.local',     '$2a$12$XJt6y5QRqV9bKdW8lm3OuOF1GrJnmPX5kV0LrZwqNpU4QsEWj7hYi', '퇴사자2',  '구개발팀',  'staff',    0);
+('inactive.user1','inactive1@corp-demo.local',     '__DEMO_PASSWORD_HASH__', '퇴사자1',  '구영업팀',  'staff',    0),
+('inactive.user2','inactive2@corp-demo.local',     '__DEMO_PASSWORD_HASH__', '퇴사자2',  '구개발팀',  'staff',    0);
 
 -- ------------------------------------------------------------------
 -- 2. 상품 데이터

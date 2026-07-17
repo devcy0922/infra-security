@@ -79,11 +79,11 @@ gantt
     title Lazy Migration 타임라인 (예시)
     dateFormat  YYYY-MM-DD
     section 이관 진행
-    Day 1 기동 (0% 이관)      :milestone, m1, 2024-09-01, 0d
-    활성 유저 50% 이관 완료   :milestone, m2, 2024-09-15, 0d
-    활성 유저 90% 이관 완료   :milestone, m3, 2024-10-01, 0d
+    Day 1 기동 (0% 이관)      :milestone, phase1, 2024-09-01, 0d
+    활성 유저 50% 이관 완료   :milestone, phase2, 2024-09-15, 0d
+    활성 유저 90% 이관 완료   :milestone, phase3, 2024-10-01, 0d
     배치 강제 이관 (잔여 10%) :crit, batch, 2024-10-01, 7d
-    Federation 비활성화       :milestone, m4, 2024-10-08, 0d
+    Federation 비활성화       :milestone, phase4, 2024-10-08, 0d
 ```
 
 일반적으로 활성 유저의 90%는 30일 내 자연 로그인으로 이관됩니다.  

@@ -37,7 +37,7 @@ ProxySQL `eventslog_filename` 포맷 예시:
 
 ```json
 {
-  "client":        "172.20.0.5:54312",
+  "client":        "198.51.100.10:54312",
   "proxy_frontend": "0.0.0.0:6033",
   "proxy_backend":  "mariadb-writer:3306",
   "username":      "appuser",

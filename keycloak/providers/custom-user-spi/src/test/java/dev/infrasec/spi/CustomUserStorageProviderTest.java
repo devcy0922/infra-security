@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -37,10 +38,10 @@ class CustomUserStorageProviderTest {
     // ── 픽스처 상수 ──────────────────────────────────────────
     private static final String USERNAME       = "staff.user01";
     private static final String EMAIL          = "user01@corp-demo.local";
-    private static final String RAW_PASSWORD   = "Demo1234!";
+    private static final String RAW_PASSWORD   = "unit-test-" + UUID.randomUUID();
     // bcrypt $2a$12$ 해시 (RAW_PASSWORD 기준)
     private static final String BCRYPT_HASH    = BCrypt.hashpw(RAW_PASSWORD, BCrypt.gensalt(12));
-    private static final String WRONG_PASSWORD = "WrongPass999";
+    private static final String WRONG_PASSWORD = "wrong-unit-test-" + UUID.randomUUID();
 
     // ── Mocks ────────────────────────────────────────────────
     @Mock KeycloakSession     session;

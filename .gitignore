@@ -33,3 +33,9 @@ keycloak/providers/custom-user-spi/.mvn/
 
 # Docker 임시 파일
 docker-compose.override.yml
+
+# 로컬 에이전트 지침
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+agents/

@@ -9,7 +9,7 @@
  *   KC_REALM    Realm 이름 (기본: infrasec)
  *   KC_CLIENT   Client ID (기본: test-client)
  *   KC_USER     테스트 유저 (기본: staff.user01)
- *   KC_PASS     테스트 패스워드 (기본: Demo1234!)
+ *   KC_PASS     실행 시 주입하는 테스트 패스워드(필수)
  */
 
 import http from 'k6/http';
@@ -27,7 +27,11 @@ const BASE_URL  = __ENV.KC_URL    || 'https://localhost:8443';
 const REALM     = __ENV.KC_REALM  || 'infrasec';
 const CLIENT_ID = __ENV.KC_CLIENT || 'test-client';
 const USERNAME  = __ENV.KC_USER   || 'staff.user01';
-const PASSWORD  = __ENV.KC_PASS   || 'Demo1234!';
+const PASSWORD  = __ENV.KC_PASS;
+
+if (!PASSWORD) {
+  throw new Error('KC_PASS를 실행 환경에 설정하세요.');
+}
 
 const TOKEN_URL = `${BASE_URL}/auth/realms/${REALM}/protocol/openid-connect/token`;
 const INTROSPECT_URL = `${BASE_URL}/auth/realms/${REALM}/protocol/openid-connect/token/introspect`;

@@ -44,7 +44,7 @@ Observability: Prometheus + Grafana + Loki
 
 ```bash
 cp .env.example .env
-# .env 파일에서 패스워드, 도메인 설정
+# .env 파일에서 패스워드, 도메인과 실행 시 생성한 DEMO_PASSWORD_HASH 설정
 ```
 
 ### TLS 인증서 생성 (개발용)
@@ -66,7 +66,7 @@ make up
 | 서비스 | 주소 | 계정 |
 |---|---|---|
 | Keycloak Admin | https://localhost/auth/admin | admin / `KC_ADMIN_PASSWORD` |
-| Grafana | http://localhost:3000 | admin / admin |
+| Grafana | http://localhost:3000 | 외부 모니터링 스택의 환경변수 사용 |
 | ProxySQL Admin | localhost:6032 | radmin / `PROXYSQL_ADMIN_PASS` |
 
 ---
@@ -159,9 +159,8 @@ infra-security/
 본 인프라 보안 데모 환경에 대해 k6 부하 테스트 및 장애 모의 시뮬레이션을 수행한 결과 지표는 다음과 같습니다.
 
 ### 1. 테스트 사양
-- **CPU**: Apple M1 Max (10 Core, 8 Performance / 2 Efficiency)
-- **Memory**: 64GB LPDDR5
-- **OS**: macOS Sonoma (14.6) / Docker Containers (Keycloak v22, ProxySQL v2.5, MariaDB v10.11)
+- **실행 경계**: 격리된 프로젝트 서버의 Docker 컨테이너
+- **구성**: Keycloak v22, ProxySQL v2.5, MariaDB v10.11
 - **부하 툴**: `k6 run load-test/keycloak-ha.js` (최대 500 Virtual Users, 3분 30초 스트레스 테스트)
 
 ### 2. 성능 지표 결과

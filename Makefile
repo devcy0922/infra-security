@@ -1,5 +1,10 @@
 .PHONY: help up down restart logs ps build seed status clean
 
+ifneq (,$(wildcard .env))
+include .env
+export
+endif
+
 # =============================================================
 # infra-security Makefile
 # =============================================================
@@ -33,10 +38,11 @@ certs: ## TLS 인증서 생성 (self-signed)
 	@scripts/gen-certs.sh
 
 seed: ## 시드 데이터 적재
+	@test -n "$${DEMO_PASSWORD_HASH}" || (echo "DEMO_PASSWORD_HASH를 설정하세요." >&2; exit 1)
 	@echo "→ Writer DB에 시드 데이터 적재..."
-	docker exec infrasec-mariadb-writer \
-	  mariadb -u root -p$${MARIADB_ROOT_PASSWORD} appdb \
-	  < mariadb/seed/02-seed.sql
+	sed "s|__DEMO_PASSWORD_HASH__|$${DEMO_PASSWORD_HASH}|g" mariadb/seed/02-seed.sql | \
+	docker exec -i infrasec-mariadb-writer \
+	  mariadb -u root -p$${MARIADB_ROOT_PASSWORD} appdb
 	@echo "→ 완료"
 
 # ── 데모 ─────────────────────────────────────────────────
